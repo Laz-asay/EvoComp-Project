@@ -3,6 +3,11 @@
 #include <vector>
 using namespace std;
 
+//declare pc struct
+struct Build {
+    int cpu, gpu, ssd, ram, motherboard, psu;
+};
+
 //constant declaration
 const int POP_SIZE = 10; // use 10 for initial testing
 const int VAR = 20; //number of alleles
@@ -12,7 +17,13 @@ const double MAX_PRICE = 8563.97; //max price
 const double MIN_PRICE = 1440.85; //should see the pattern here 
 const double MAX_POP = 60;
 
-const double BUDGET = 4000.00; //budget set for the project
+const double BUDGET = 4000.00; //budget set for the project//
+
+//fitness
+double fitness[POP_SIZE];
+
+//declare parents
+int parents[2];
 
 
 //struct declaration for part attributes
@@ -165,9 +176,6 @@ void declareParts() {
     };
 }
 
-struct Build {
-    int cpu, gpu, ssd, ram, motherboard, psu;
-};
 
 vector<Build> generateRandomBuilds() {
     vector<Build> builds(POP_SIZE);
@@ -198,7 +206,7 @@ void printChromosome(const Build& b) {
 
 
 
-void evaluateChromosome(const Build& b) {
+double evaluateChromosome(const Build& b) {
     double fitness;
     double w1 = 0.5, w2 = 0.3, w3 = 0.2;
     double penalty = 0;
@@ -239,24 +247,75 @@ void evaluateChromosome(const Build& b) {
     cout << "Total Price: RM" << totalprice << endl;
     cout << "Total Popularity: " << totalpop << endl;
     cout << "Fitness: " << fitness << "\n" << endl;
+
+    return fitness;
 }
 
+int parentSelection(double fitness[]) {
+    int best = rand() % POP_SIZE; //to pick random chromosome
+
+    for (int i = 0; i < 2; i++) {
+        int challenger = rand() % POP_SIZE;
+        if (fitness[challenger] > fitness[best]) {
+            best = challenger;
+        }
+    }
+
+    return best;
+}
+
+Build crossover(const Build& parent1, const Build& parent2) {
+    Build child = parent1;
+
+    int crossoverPoint = rand() % 6;
+
+    switch (crossoverPoint) {
+        case 0: child.cpu = parent2.cpu; 
+        case 1: child.gpu = parent2.gpu; 
+        case 2: child.ssd = parent2.ssd; 
+        case 3: child.ram = parent2.ram; 
+        case 4: child.motherboard = parent2.motherboard; 
+        case 5: child.psu = parent2.psu; 
+    }
+
+    return child;
+}
 
 int main()
 {
     srand(time(0));
-	declareParts();
 
+	declareParts();
+    
+    cout << "\n====== GENERATE POPULATION ======\n";
     vector<Build> builds = generateRandomBuilds();
 
     for (int i = 0; i < POP_SIZE; i++) {
         cout << "Build " << i + 1 << ": \n";
         printChromosome(builds[i]);
-        evaluateChromosome(builds[i]);
+        fitness[i] = evaluateChromosome(builds[i]);
         cout << "\n";
     }
+    
+    cout << "\n====== PARENT SELECTON ======\n";
+    parents[0] = parentSelection(fitness);
+    do {
+        parents[1] = parentSelection(fitness);
+    } while (parents[1] == parents[0]);
 
+    cout << "Build " << parents[0] << " is selected as parent 1.";
+    cout << "\nBuild " << parents[1] << " is selected as parent 2.";
+    
+    cout << "\n\n====== CROSSOVER ======\n";
+    Build child1 = crossover(builds[parents[0]], builds[parents[1]]);
+    Build child2 = crossover(builds[parents[1]], builds[parents[0]]);
 
+    cout << "Child 1:\n";
+    printChromosome(child1);
+    double child1Fitness = evaluateChromosome(child1); 
 
+    cout << "\nChild 2:\n";
+    printChromosome(child2);
+    double child2Fitness = evaluateChromosome(child2); 
 }
 
