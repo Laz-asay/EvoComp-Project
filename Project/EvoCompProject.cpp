@@ -291,7 +291,7 @@ int main()
     vector<Build> builds = generateRandomBuilds();
 
     for (int i = 0; i < POP_SIZE; i++) {
-        cout << "Build " << i + 1 << ": \n";
+        cout << "Build " << i << ": \n";
         printChromosome(builds[i]);
         fitness[i] = evaluateChromosome(builds[i]);
         cout << "\n";
