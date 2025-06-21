@@ -169,16 +169,21 @@ struct Build {
     int cpu, gpu, ssd, ram, motherboard, psu;
 };
 
-Build generateRandomBuild() {
-    Build build;
-    build.cpu = rand() % VAR;
-    build.gpu = rand() % VAR;
-    build.ssd = rand() % VAR;
-    build.ram = rand() % VAR;
-    build.motherboard = rand() % VAR;
-    build.psu = rand() % VAR;
+vector<Build> generateRandomBuilds() {
+    vector<Build> builds(POP_SIZE);
 
-    return build;
+    for (int i = 0; i < POP_SIZE; i++) {
+
+        builds[i].cpu = rand() % VAR;
+        builds[i].gpu = rand() % VAR;
+        builds[i].ssd = rand() % VAR;
+        builds[i].ram = rand() % VAR;
+        builds[i].motherboard = rand() % VAR;
+        builds[i].psu = rand() % VAR;
+
+        
+    }
+    return builds;
 }
 
 void printChromosome(const Build& b) {
@@ -191,7 +196,9 @@ void printChromosome(const Build& b) {
 }
 
 
-void evaluateChromosome(Build b) {
+
+
+void evaluateChromosome(const Build& b) {
     double fitness;
     double w1 = 0.5, w2 = 0.3, w3 = 0.2;
     double penalty = 0;
@@ -205,15 +212,15 @@ void evaluateChromosome(Build b) {
 
     double totalprice = cpu[b.cpu].price +
         gpu[b.gpu].price +
-        ssd[b.ssd].price+
-        ram[b.ram].price+
+        ssd[b.ssd].price +
+        ram[b.ram].price +
         motherboard[b.motherboard].price +
         psu[b.psu].price;
 
     double totalpop = cpu[b.cpu].popularity +
         gpu[b.gpu].popularity +
         ssd[b.ssd].popularity +
-        ram[b.ram].popularity+
+        ram[b.ram].popularity +
         motherboard[b.motherboard].popularity +
         psu[b.psu].popularity;
 
@@ -228,20 +235,27 @@ void evaluateChromosome(Build b) {
         (w2 * (((MAX_PRICE - totalprice) / (MAX_PRICE - MIN_PRICE)) * penalty)) +
         (w3 * (totalpop / MAX_POP));
 
-    cout << "\nTotal Performance (out of 600): " << totalPerf;
-    cout << "\nTotal Price: RM" << totalprice;
-    cout << "\nTotal Popularity (out of 60): " << totalpop;
-    cout << "\nFitness for this build is " << fitness;
+    cout << "Total Performance: " << totalPerf << endl;
+    cout << "Total Price: RM" << totalprice << endl;
+    cout << "Total Popularity: " << totalpop << endl;
+    cout << "Fitness: " << fitness << "\n" << endl;
 }
+
 
 int main()
 {
     srand(time(0));
 	declareParts();
 
-    Build b = generateRandomBuild();
-    printChromosome(b);
-    evaluateChromosome(b);
+    vector<Build> builds = generateRandomBuilds();
+
+    for (int i = 0; i < POP_SIZE; i++) {
+        cout << "Build " << i + 1 << ": \n";
+        printChromosome(builds[i]);
+        evaluateChromosome(builds[i]);
+        cout << "\n";
+    }
+
 
 
 }
