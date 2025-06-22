@@ -1,6 +1,9 @@
 #include <iostream>
 #include <cstdlib>
 #include <vector>
+#include<ctime>
+#include <fstream>
+
 using namespace std;
 
 //declare pc struct
@@ -281,41 +284,105 @@ Build crossover(const Build& parent1, const Build& parent2) {
     return child;
 }
 
+Build mutate(const Build& b, double mutationRate = 0.1) {
+    Build mutated = b;
+
+    // Each component has a chance to mutate
+    if ((double)rand() / RAND_MAX < mutationRate)
+        mutated.cpu = rand() % VAR;
+
+    if ((double)rand() / RAND_MAX < mutationRate)
+        mutated.gpu = rand() % VAR;
+
+    if ((double)rand() / RAND_MAX < mutationRate)
+        mutated.ssd = rand() % VAR;
+
+    if ((double)rand() / RAND_MAX < mutationRate)
+        mutated.ram = rand() % VAR;
+
+    if ((double)rand() / RAND_MAX < mutationRate)
+        mutated.motherboard = rand() % VAR;
+
+    if ((double)rand() / RAND_MAX < mutationRate)
+        mutated.psu = rand() % VAR;
+
+    return mutated;
+}
+
+void survivalSelection(vector<Build>& builds, double fitness[], const Build& child, double childFitness, int parentIndex) {
+    if (childFitness > fitness[parentIndex]) {
+        builds[parentIndex] = child;
+        fitness[parentIndex] = childFitness;
+        cout << "Child replaces parent " << parentIndex << " (Fitness improved to " << childFitness << ")\n";
+    } else {
+        cout << "Child did not outperform parent " << parentIndex << " (Remains with fitness " << fitness[parentIndex] << ")\n";
+    }
+}
+
 int main()
 {
     srand(time(0));
 
-	declareParts();
-    
-    cout << "\n====== GENERATE POPULATION ======\n";
+    declareParts();
+    ofstream csvFile("fitness_log.csv");
+    csvFile << "Generation,BestFitness,AverageFitness\n";  // CSV header
+
+
+    const int GENERATIONS = 30;
+
+    cout << "\n====== INITIAL POPULATION ======\n";
     vector<Build> builds = generateRandomBuilds();
 
     for (int i = 0; i < POP_SIZE; i++) {
-        cout << "Build " << i << ": \n";
-        printChromosome(builds[i]);
         fitness[i] = evaluateChromosome(builds[i]);
-        cout << "\n";
+    }
+
+    for (int gen = 0; gen < GENERATIONS; gen++) {
+        cout << "\n======= GENERATION " << gen + 1 << " =======\n";
+
+        // PARENT SELECTION
+        parents[0] = parentSelection(fitness);
+        do {
+            parents[1] = parentSelection(fitness);
+        } while (parents[1] == parents[0]);
+
+        cout << "Parent 1: Build " << parents[0] << "\n";
+        cout << "Parent 2: Build " << parents[1] << "\n";
+
+        // CROSSOVER
+        Build child1 = crossover(builds[parents[0]], builds[parents[1]]);
+        Build child2 = crossover(builds[parents[1]], builds[parents[0]]);
+
+        // MUTATION
+        Build mutatedChild1 = mutate(child1);
+        Build mutatedChild2 = mutate(child2);
+
+        // FITNESS EVALUATION
+        double mutatedFitness1 = evaluateChromosome(mutatedChild1);
+        double mutatedFitness2 = evaluateChromosome(mutatedChild2);
+
+        // SURVIVAL SELECTION
+        survivalSelection(builds, fitness, mutatedChild1, mutatedFitness1, parents[0]);
+        survivalSelection(builds, fitness, mutatedChild2, mutatedFitness2, parents[1]);
+
+        // OPTIONAL: Print best fitness in this generation
+        double best = fitness[0];
+        double total = fitness[0];
+        for (int i = 1; i < POP_SIZE; i++) {
+            if (fitness[i] > best) best = fitness[i];
+            total += fitness[i];
+        }
+        double avg = total / POP_SIZE;
+
+         cout << "Best Fitness this generation: " << best << "\n";
+         cout << "Average Fitness this generation: " << avg << "\n";
+        csvFile << gen + 1 << "," << best << "," << avg << "\n";
+
     }
     
-    cout << "\n====== PARENT SELECTON ======\n";
-    parents[0] = parentSelection(fitness);
-    do {
-        parents[1] = parentSelection(fitness);
-    } while (parents[1] == parents[0]);
+    csvFile.close();
 
-    cout << "Build " << parents[0] << " is selected as parent 1.";
-    cout << "\nBuild " << parents[1] << " is selected as parent 2.";
-    
-    cout << "\n\n====== CROSSOVER ======\n";
-    Build child1 = crossover(builds[parents[0]], builds[parents[1]]);
-    Build child2 = crossover(builds[parents[1]], builds[parents[0]]);
-
-    cout << "Child 1:\n";
-    printChromosome(child1);
-    double child1Fitness = evaluateChromosome(child1); 
-
-    cout << "\nChild 2:\n";
-    printChromosome(child2);
-    double child2Fitness = evaluateChromosome(child2); 
+    return 0;
 }
+
 
